@@ -30,25 +30,26 @@ class BPE(object):
 
     def __init__(self, codes, merges=-1, separator='@@', vocab=None, glossaries=None):
 
-        codes.seek(0)
-        offset=1
+#         codes.seek(0)
+#         offset=1
 
-        # check version information
-        firstline = codes.readline()
-        if firstline.startswith('#version:'):
-            self.version = tuple([int(x) for x in re.sub(r'(\.0+)*$','', firstline.split()[-1]).split(".")])
-            offset += 1
-        else:
-            self.version = (0, 1)
-            codes.seek(0)
+#         # check version information
+#         firstline = codes.readline()
+#         if firstline.startswith('#version:'):
+#             self.version = tuple([int(x) for x in re.sub(r'(\.0+)*$','', firstline.split()[-1]).split(".")])
+#             offset += 1
+#         else:
+#             self.version = (0, 1)
+#             codes.seek(0)
+        self.version = (0, 2)
 
-        self.bpe_codes = [tuple(item.strip('\r\n ').split(' ')) for (n, item) in enumerate(codes) if (n < merges or merges == -1)]
+        self.bpe_codes = codes #[tuple(item.strip('\r\n ').split(' ')) for (n, item) in enumerate(codes) if (n < merges or merges == -1)]
 
-        for i, item in enumerate(self.bpe_codes):
-            if len(item) != 2:
-                sys.stderr.write('Error: invalid line {0} in BPE codes file: {1}\n'.format(i+offset, ' '.join(item)))
-                sys.stderr.write('The line should exist of exactly two subword units, separated by whitespace\n')
-                sys.exit(1)
+#         for i, item in enumerate(self.bpe_codes):
+#             if len(item) != 2:
+#                 sys.stderr.write('Error: invalid line {0} in BPE codes file: {1}\n'.format(i+offset, ' '.join(item)))
+#                 sys.stderr.write('The line should exist of exactly two subword units, separated by whitespace\n')
+#                 sys.exit(1)
 
         # some hacking to deal with duplicates (only consider first instance)
         self.bpe_codes = dict([(code,i) for (i,code) in reversed(list(enumerate(self.bpe_codes)))])

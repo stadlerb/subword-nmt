@@ -64,22 +64,12 @@ def create_parser(subparsers=None):
 
     return parser
 
-def get_vocabulary(fobj, is_dict=False):
+def get_vocabulary(fobj):
     """Read text and return dictionary that encodes vocabulary
     """
     vocab = Counter()
-    for i, line in enumerate(fobj):
-        if is_dict:
-            try:
-                word, count = line.strip('\r\n ').split(' ')
-            except:
-                print('Failed reading vocabulary file at line {0}: {1}'.format(i, line))
-                sys.exit(1)
-            vocab[word] += int(count)
-        else:
-            for word in line.strip('\r\n ').split(' '):
-                if word:
-                    vocab[word] += 1
+    for i, word in enumerate(fobj):
+      vocab[word] += 1
     return vocab
 
 def update_pair_statistics(pair, changed, stats, indices):
@@ -200,15 +190,13 @@ def prune_stats(stats, big_stats, threshold):
                 big_stats[item] = freq
 
 
-def learn_bpe(infile, outfile, num_symbols, min_frequency=2, verbose=False, is_dict=False, total_symbols=False):
-    """Learn num_symbols BPE operations from vocabulary, and write to outfile.
-    """
+def learn_bpe(words, num_symbols, min_frequency=2, verbose=False, is_dict=False, total_symbols=False):
+    ret = []
 
     # version 0.2 changes the handling of the end-of-word token ('</w>');
     # version numbering allows bckward compatibility
-    outfile.write('#version: 0.2\n')
 
-    vocab = get_vocabulary(infile, is_dict)
+    vocab = get_vocabulary(words)
     vocab = dict([(tuple(x[:-1])+(x[-1]+'</w>',) ,y) for (x,y) in vocab.items()])
     sorted_vocab = sorted(vocab.items(), key=lambda x: x[1], reverse=True)
 
@@ -246,15 +234,15 @@ def learn_bpe(infile, outfile, num_symbols, min_frequency=2, verbose=False, is_d
             sys.stderr.write('no pair has frequency >= {0}. Stopping\n'.format(min_frequency))
             break
 
-        if verbose:
-            sys.stderr.write('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(i, most_frequent[0], most_frequent[1], stats[most_frequent]))
-        outfile.write('{0} {1}\n'.format(*most_frequent))
+#         if verbose:
+#             sys.stderr.write('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(i, most_frequent[0], most_frequent[1], stats[most_frequent]))
+        ret.append(most_frequent)
         changes = replace_pair(most_frequent, sorted_vocab, indices)
         update_pair_statistics(most_frequent, changes, stats, indices)
         stats[most_frequent] = 0
         if not i % 100:
             prune_stats(stats, big_stats, threshold)
-
+    return ret
 
 if __name__ == '__main__':
 
